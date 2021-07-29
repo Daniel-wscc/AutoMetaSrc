@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import *
-from V1 import Ui_mainWindow      #search_ui 是你的.py檔案名字
+from V2 import Ui_mainWindow      #search_ui 是你的.py檔案名字
 from PyQt5 import *
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
@@ -20,7 +20,7 @@ import pythoncom
 import inspect
 import ctypes
 import os
-
+from bs4 import BeautifulSoup
 
 readyCheck=0
 path=""
@@ -31,6 +31,7 @@ threadList=[]
 thread=0
 last_champ="None"
 now_champ="None"
+
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -130,12 +131,24 @@ class MainWindow(QtWidgets.QMainWindow):
                     last_champ=now_champ
                     self.ui.champIcon.setPixmap(QPixmap(""))
                     self.ui.champName.setText("")
+                    self.ui.itemIcon_1.setPixmap(QPixmap(""))
+                    self.ui.itemIcon_2.setPixmap(QPixmap(""))
+                    self.ui.itemIcon_3.setPixmap(QPixmap(""))
+                    self.ui.itemIcon_4.setPixmap(QPixmap(""))
+                    self.ui.itemIcon_5.setPixmap(QPixmap(""))
+                    self.ui.itemIcon_6.setPixmap(QPixmap(""))
                 if gameflow == '"Lobby"':
                     self.ui.state.setText("組隊房間")
                     now_champ = get_champ_select()
                     last_champ=now_champ
                     self.ui.champIcon.setPixmap(QPixmap(""))
                     self.ui.champName.setText("")
+                    self.ui.itemIcon_1.setPixmap(QPixmap(""))
+                    self.ui.itemIcon_2.setPixmap(QPixmap(""))
+                    self.ui.itemIcon_3.setPixmap(QPixmap(""))
+                    self.ui.itemIcon_4.setPixmap(QPixmap(""))
+                    self.ui.itemIcon_5.setPixmap(QPixmap(""))
+                    self.ui.itemIcon_6.setPixmap(QPixmap(""))
                 if gameflow == '"Matchmaking"':
                     self.ui.state.setText("配對中")
                 if gameflow == '"InProgress"':
@@ -147,23 +160,24 @@ class MainWindow(QtWidgets.QMainWindow):
                 if gameflow == '"ChampSelect"':
                     self.ui.state.setText("選擇英雄中")
                     now_champ = get_champ_select()
-                    if(last_champ!=now_champ and now_champ!='None' and self.ui.checkBox_2.isChecked()):
+                    if(last_champ!=now_champ and now_champ!='None'):
                         #print(now_champ)
                         #print(now_champ_1)
-                        if (self.ui.Metasrc.isChecked()):
-                            if (self.ui.radioButton.isChecked()):
-                                metaSrc = 'https://www.metasrc.com/aram/champion/'
-                                webbrowser.get('windows-default').open(metaSrc+str(now_champ))
-                            if (self.ui.radioButton_2.isChecked()):
-                                metaSrc = 'https://www.metasrc.com/5v5/champion/'
-                                webbrowser.get('windows-default').open(metaSrc+str(now_champ))
-                        if (self.ui.OPGG.isChecked()):
-                            if (self.ui.radioButton.isChecked()):
-                                OPGG = 'https://na.op.gg/aram/'+now_champ+'/statistics/'
-                                webbrowser.get('windows-default').open(OPGG)
-                            if (self.ui.radioButton_2.isChecked()):
-                                OPGG = 'https://na.op.gg/champion/'+now_champ+'/statistics/'
-                                webbrowser.get('windows-default').open(OPGG)
+                        if(self.ui.checkBox_2.isChecked()):
+                            if (self.ui.Metasrc.isChecked()):
+                                if (self.ui.radioButton.isChecked()):
+                                    metaSrc = 'https://www.metasrc.com/aram/champion/'
+                                    webbrowser.get('windows-default').open(metaSrc+str(now_champ))
+                                if (self.ui.radioButton_2.isChecked()):
+                                    metaSrc = 'https://www.metasrc.com/5v5/champion/'
+                                    webbrowser.get('windows-default').open(metaSrc+str(now_champ))
+                            if (self.ui.OPGG.isChecked()):
+                                if (self.ui.radioButton.isChecked()):
+                                    OPGG = 'https://na.op.gg/aram/'+now_champ+'/statistics/'
+                                    webbrowser.get('windows-default').open(OPGG)
+                                if (self.ui.radioButton_2.isChecked()):
+                                    OPGG = 'https://na.op.gg/champion/'+now_champ+'/statistics/'
+                                    webbrowser.get('windows-default').open(OPGG)
                         last_champ = now_champ
                         self.ui.champName.setText(now_champ)
                         champIconUrl = "http://ddragon.leagueoflegends.com/cdn/11.15.1/img/champion/"+now_champ+".png"    
@@ -171,6 +185,45 @@ class MainWindow(QtWidgets.QMainWindow):
                         champImg = QPixmap()
                         champImg.loadFromData(data)
                         self.ui.champIcon.setPixmap(champImg)
+                        
+       #                 itemIconUrl = "https://ddragon.leagueoflegends.com/cdn/11.15.1/img/item/3111.png"
+       #                 icondata = urllib.request.urlopen(itemIconUrl).read()
+       #                 itemIcon = QPixmap()
+       #                 itemIcon.loadFromData(icondata)
+       #                 self.ui.itemIcon_.setPixmap(itemIcon)
+                        
+                        if(self.ui.radioButton.isChecked()):
+                            response = requests.get('https://www.metasrc.com/aram/champion/'+str(now_champ))
+                        if(self.ui.radioButton_2.isChecked()):
+                            response = requests.get('https://www.metasrc.com/5v5/champion/'+str(now_champ))
+                            
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        itemdivs = soup.find('div', '_sfh2p9-3')     
+                        itemdivs = itemdivs.select('img')
+                        num = 1
+                        strlist = []
+                        lasticon = ''
+                        for icon in itemdivs:
+                            i = icon['data-src']
+                            strlist.append(str(i))
+                        
+                        for url in strlist:
+                        
+                            if url.rsplit("/",1)[1] == 'coin.png' and num <7:
+                                itemImg = getattr(self.ui, 'itemIcon_{}'.format(num))
+                                itemIconUrl = lasticon
+                                icondata = urllib.request.urlopen(itemIconUrl).read()
+                                itemIcon = QPixmap()
+                                itemIcon.loadFromData(icondata)
+                                itemImg.setPixmap(itemIcon)
+                                num += 1
+                                
+                            else:
+                                lasticon = url
+
+                        
+                        
+                        
                 if gameflow == '"InProgress"':
                     now_champ = get_champ_select()
                     last_champ=now_champ
@@ -235,7 +288,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 print('路徑不存在或遊戲客戶端未啟動 !\n\n')
                 win32api.MessageBox(0, '路徑不存在或遊戲客戶端未啟動 !', '錯誤')
             return lockfile'''
-
+        
         
         threadList.append(threading.Thread(target = load_lockfile))
         threadList[thread].setDaemon(True)
