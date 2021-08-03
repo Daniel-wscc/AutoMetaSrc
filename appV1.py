@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import *
-from V2 import Ui_mainWindow      #search_ui 是你的.py檔案名字
+from V1 import Ui_mainWindow      #search_ui 是你的.py檔案名字
 from PyQt5 import *
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
@@ -137,6 +137,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.ui.itemIcon_4.setPixmap(QPixmap(""))
                     self.ui.itemIcon_5.setPixmap(QPixmap(""))
                     self.ui.itemIcon_6.setPixmap(QPixmap(""))
+                    self.ui.champTier.setText("")
+                    self.ui.champScore.setText('整體分數:\n')
+                    self.ui.champWinRate.setText('英雄勝率:\n')
                 if gameflow == '"Lobby"':
                     self.ui.state.setText("組隊房間")
                     now_champ = get_champ_select()
@@ -202,7 +205,23 @@ class MainWindow(QtWidgets.QMainWindow):
                         itemdivs = itemdivs.select('img')
                         num = 1
                         strlist = []
+                        tierList = ['God','Strong','Above Average','Below Average','Weak','Bad']
+                        colorList = ['green','lightgreen','lightyellow','deeppink','orange','red']
+                        tierText = ''
                         lasticon = ''
+                        champTier = soup.find('div', '_xtoaop _4pvjjd')
+                        champTier = champTier.find_all('tr', '_eveje5')
+                        for n in champTier :
+                            tierText = n.find("td", class_ = "_mi4tco").text
+                            if (num == 1):
+                                self.ui.champTier.setStyleSheet("QLabel{color:"+colorList[tierList.index(tierText)]+";}")
+                                self.ui.champTier.setText(tierText)
+                            if (num == 2):
+                                self.ui.champScore.setText('整體分數:\n'+tierText)
+                            if (num == 3):
+                                self.ui.champWinRate.setText('英雄勝率:\n'+tierText)
+                            num += 1
+                        num = 1
                         for icon in itemdivs:
                             i = icon['data-src']
                             strlist.append(str(i))
@@ -220,7 +239,9 @@ class MainWindow(QtWidgets.QMainWindow):
                                 
                             else:
                                 lasticon = url
-
+                        
+                            #tierList.extend(n.find("td", class_ = "_mi4tco"))
+                        
                         
                         
                         
