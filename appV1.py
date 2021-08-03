@@ -140,6 +140,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.ui.champTier.setText("")
                     self.ui.champScore.setText('整體分數:\n')
                     self.ui.champWinRate.setText('英雄勝率:\n')
+                    self.ui.summonerSpells1.setPixmap(QPixmap(""))
+                    self.ui.summonerSpells2.setPixmap(QPixmap(""))
                 if gameflow == '"Lobby"':
                     self.ui.state.setText("組隊房間")
                     now_champ = get_champ_select()
@@ -152,6 +154,11 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.ui.itemIcon_4.setPixmap(QPixmap(""))
                     self.ui.itemIcon_5.setPixmap(QPixmap(""))
                     self.ui.itemIcon_6.setPixmap(QPixmap(""))
+                    self.ui.champTier.setText("")
+                    self.ui.champScore.setText('整體分數:\n')
+                    self.ui.champWinRate.setText('英雄勝率:\n')
+                    self.ui.summonerSpells1.setPixmap(QPixmap(""))
+                    self.ui.summonerSpells2.setPixmap(QPixmap(""))
                 if gameflow == '"Matchmaking"':
                     self.ui.state.setText("配對中")
                 if gameflow == '"InProgress"':
@@ -211,6 +218,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         lasticon = ''
                         champTier = soup.find('div', '_xtoaop _4pvjjd')
                         champTier = champTier.find_all('tr', '_eveje5')
+                        summonerSpell = soup.find('div', '_sfh2p9')
+                        summonerSpell = summonerSpell.select('img')
                         for n in champTier :
                             tierText = n.find("td", class_ = "_mi4tco").text
                             if (num == 1):
@@ -222,12 +231,21 @@ class MainWindow(QtWidgets.QMainWindow):
                                 self.ui.champWinRate.setText('英雄勝率:\n'+tierText)
                             num += 1
                         num = 1
+                        for spell in summonerSpell :
+                            spellUrl = spell['data-src']
+                            data = urllib.request.urlopen(spellUrl).read()
+                            champImg = QPixmap()
+                            champImg.loadFromData(data)
+                            if ( num == 1):
+                                self.ui.summonerSpells1.setPixmap(champImg)
+                            if ( num == 2):
+                                self.ui.summonerSpells2.setPixmap(champImg)
+                            num += 1
+                        num = 1
                         for icon in itemdivs:
                             i = icon['data-src']
                             strlist.append(str(i))
-                        
                         for url in strlist:
-                        
                             if url.rsplit("/",1)[1] == 'coin.png' and num <7:
                                 itemImg = getattr(self.ui, 'itemIcon_{}'.format(num))
                                 itemIconUrl = lasticon
