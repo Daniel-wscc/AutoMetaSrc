@@ -92,7 +92,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         for obj in objs:
                             if (obj.Name == "LeagueClient.exe"):
                                 path=obj.ExecutablePath
-                                print(path)
                         path = path.rsplit("\\",1)
                         if len(path)==2:
                             self.ui.lineEdit.setText(path[0])
@@ -106,14 +105,180 @@ class MainWindow(QtWidgets.QMainWindow):
                             s = '未啟動客戶端'
                         self.ui.state.setText(s)
                         pass
-                #print(lockfile)
                     
-                    # Load lockfile
-                    
-                    
+        def reset():
+            while (threadList[-1].is_alive()):
+                time.sleep(1)
+            self.ui.state.setText("大廳")
+            now_champ = get_champ_select()
+            last_champ=now_champ
+            self.ui.champIcon.setPixmap(QPixmap(""))
+            self.ui.champName.setText("")
+            self.ui.itemIcon_1.setPixmap(QPixmap(""))
+            self.ui.itemIcon_2.setPixmap(QPixmap(""))
+            self.ui.itemIcon_3.setPixmap(QPixmap(""))
+            self.ui.itemIcon_4.setPixmap(QPixmap(""))
+            self.ui.itemIcon_5.setPixmap(QPixmap(""))
+            self.ui.itemIcon_6.setPixmap(QPixmap(""))
+            self.ui.champTier.setText("")
+            self.ui.champScore.setText('整體分數:\n')
+            self.ui.champWinRate.setText('英雄勝率:\n')
+            self.ui.summonerSpells1.setPixmap(QPixmap(""))
+            self.ui.summonerSpells2.setPixmap(QPixmap(""))
+            for n in range(1,12) :
+                perkBorder = getattr(self.ui, 'perk{}'.format(n))
+                perkBorder.setPixmap(QPixmap(""))
+            
                 
+        def getTier():
+            if(self.ui.radioButton.isChecked()):
+                response = requests.get('https://www.metasrc.com/aram/champion/'+str(now_champ))
+            if(self.ui.radioButton_2.isChecked()):
+                response = requests.get('https://www.metasrc.com/5v5/champion/'+str(now_champ))
+                
+            soup = BeautifulSoup(response.text, 'html.parser')
+            num = 1
+            tierList = ['God','Strong','Above Average','Below Average','Weak','Bad']
+            colorList = ['green','lightgreen','lightyellow','deeppink','orange','red']
+            champTier = soup.find('div', '_xtoaop _4pvjjd')
+            champTier = champTier.find_all('tr', '_eveje5')
+            for n in champTier :
+                tierText = n.find("td", class_ = "_mi4tco").text
+                if (num == 1):
+                    self.ui.champTier.setStyleSheet("QLabel{color:"+colorList[tierList.index(tierText)]+";}")
+                    self.ui.champTier.setText(tierText)
+                if (num == 2):
+                    self.ui.champScore.setText('整體分數:\n'+tierText)
+                if (num == 3):
+                    self.ui.champWinRate.setText('英雄勝率:\n'+tierText)
+                num += 1
+        
+        def getSpell():
+            if(self.ui.radioButton.isChecked()):
+                response = requests.get('https://www.metasrc.com/aram/champion/'+str(now_champ))
+            if(self.ui.radioButton_2.isChecked()):
+                response = requests.get('https://www.metasrc.com/5v5/champion/'+str(now_champ))
+                
+            soup = BeautifulSoup(response.text, 'html.parser')
+            summonerSpell = soup.find('div', '_sfh2p9')
+            summonerSpell = summonerSpell.select('img')
+            num = 1
+            for spell in summonerSpell :
+                spellUrl = spell['data-src']
+                data = urllib.request.urlopen(spellUrl).read()
+                champImg = QPixmap()
+                champImg.loadFromData(data)
+                if ( num == 1):
+                    self.ui.summonerSpells1.setPixmap(champImg)
+                if ( num == 2):
+                    self.ui.summonerSpells2.setPixmap(champImg)
+                num += 1
+        
+        def getItem():
+            if(self.ui.radioButton.isChecked()):
+                response = requests.get('https://www.metasrc.com/aram/champion/'+str(now_champ))
+            if(self.ui.radioButton_2.isChecked()):
+                response = requests.get('https://www.metasrc.com/5v5/champion/'+str(now_champ))
+                
+            soup = BeautifulSoup(response.text, 'html.parser')
+            itemdivs = soup.find('div', '_sfh2p9-3')     
+            itemdivs = itemdivs.select('img')
+            perkImg = soup.find_all('image','lozad')
+            num = 1
+            strlist = []
+            lasticon = ''
+            for icon in itemdivs:
+                i = icon['data-src']
+                strlist.append(str(i))
+            for url in strlist:
+                if url.rsplit("/",1)[1] == 'coin.png' and num <7:
+                    itemImg = getattr(self.ui, 'itemIcon_{}'.format(num))
+                    itemIconUrl = lasticon
+                    icondata = urllib.request.urlopen(itemIconUrl).read()
+                    itemIcon = QPixmap()
+                    itemIcon.loadFromData(icondata)
+                    itemImg.setPixmap(itemIcon)
+                    num += 1
+                    
+                else:
+                    lasticon = url
+
+        def getPerk():
+            if(self.ui.radioButton.isChecked()):
+                response = requests.get('https://www.metasrc.com/aram/champion/'+str(now_champ))
+            if(self.ui.radioButton_2.isChecked()):
+                response = requests.get('https://www.metasrc.com/5v5/champion/'+str(now_champ))
+                
+            num = 1
+            soup = BeautifulSoup(response.text, 'html.parser')  
+            perkIcon = soup.find_all('image','lozad')
+            color = ""
+            for post in perkIcon:
+                if (num == 1 or num ==6):
+                    perkUrl = 'https://www.metasrc.com' + post['data-xlink-href']
+                    perk = post['data-xlink-href'].rsplit('/',1)[1]
+                    if(perk == '8000.png'):
+                        color = 'yellow'
+                    if(perk == '8100.png'):
+                        color = 'red'
+                    if(perk == '8200.png'):
+                        color = 'purple'
+                    if(perk == '8300.png'):
+                        color = 'blue'
+                    if(perk == '8400.png'):
+                        color = 'green'
+                else :
+                    perkUrl = post['data-xlink-href']
+                headers = {'User-Agent':'Mozilla/5.0'}
+                req = urllib.request.Request(url=perkUrl, headers=headers)
+                perkIconData = urllib.request.urlopen(req).read()
+                perkIcon = QPixmap()
+                perkIcon.loadFromData(perkIconData)
+                #if (num < 9):
+                    #changeColor( color , num )
+                #itemImg.setPixmap(itemIcon)
+                if (num == 2):
+                    perkIcon_resize = perkIcon.scaled(72, 72)
+                else :
+                    perkIcon_resize = perkIcon.scaled(26, 26)
+                perkImg = getattr(self.ui, 'perk{}'.format(num))
+                perkImg.setPixmap(perkIcon_resize)
+                num += 1
+                if (num==12):
+                    break
+            
+            
+        def changeColor(color , n):
+            colorStyle = ['yellow','red','purple','blue','green']
+            Style  = ["QLabel{background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(0, 0, 0, 255), stop:0.77 rgba(0, 0, 0, 255), stop:0.89"
+                      " rgba(212 , 184 , 116 , 255), stop:1 rgba(0, 0, 0, 0));}", #yellow
+                      "QLabel{background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(0, 0, 0, 255), stop:0.77 rgba(0, 0, 0, 255), stop:0.89"
+                      " rgba(229, 102, 116, 255), stop:1 rgba(0, 0, 0, 0));}", #red
+                      "QLabel{background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(0, 0, 0, 255), stop:0.77 rgba(0, 0, 0, 255), stop:0.89"
+                      " rgba(158 , 111 , 252 , 255), stop:1 rgba(0, 0, 0, 0));}",
+                      "QLabel{background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(0, 0, 0, 255), stop:0.77 rgba(0, 0, 0, 255), stop:0.89"
+                      " rgba(108 , 189 , 209 , 255), stop:1 rgba(0, 0, 0, 0));}",
+                      "QLabel{background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(0, 0, 0, 255), stop:0.77 rgba(0, 0, 0, 255), stop:0.89"
+                      " rgba(91 , 208 , 82 , 255), stop:1 rgba(0, 0, 0, 0));}"]       
+            barStyle = ["background-color: rgba(212 , 184 , 116 , 170)",
+                        "background-color: rgba(229 , 102 , 116 , 170)",
+                        "background-color: rgba(158 , 111 , 252 , 170)",
+                        "background-color: rgba(108 , 189 , 209 , 170)",
+                        "background-color: rgba(91 , 208 , 82 , 170)"]
+            perkBorder = getattr(self.ui, 'perk{}'.format(n))
+            perkBorder.setStyleSheet(Style[colorStyle.index(color)])
+            if ( n == 1 ):
+                self.ui.colorBar.setStyleSheet(barStyle[colorStyle.index(color)])
+            if ( n == 6 ):
+                self.ui.colorBar_2.setStyleSheet(barStyle[colorStyle.index(color)])
+            #perkBorder.setStyleSheet(yellowStyle)
+
+                
+            
+            
+        
         def find_match():
-            global now_champ,last_champ
+            global now_champ,last_champ,thread
             requests.packages.urllib3.disable_warnings()
     
     
@@ -125,40 +290,16 @@ class MainWindow(QtWidgets.QMainWindow):
             while readyCheck==1:
                 time.sleep(1)
                 gameflow = get_gameflow()
+                
+                for t in threadList:
+                    print('\r' , t , ":" , t.is_alive() ,'\n', end = '')
+                    
                 if gameflow == '"None"':
-                    self.ui.state.setText("大廳")
-                    now_champ = get_champ_select()
-                    last_champ=now_champ
-                    self.ui.champIcon.setPixmap(QPixmap(""))
-                    self.ui.champName.setText("")
-                    self.ui.itemIcon_1.setPixmap(QPixmap(""))
-                    self.ui.itemIcon_2.setPixmap(QPixmap(""))
-                    self.ui.itemIcon_3.setPixmap(QPixmap(""))
-                    self.ui.itemIcon_4.setPixmap(QPixmap(""))
-                    self.ui.itemIcon_5.setPixmap(QPixmap(""))
-                    self.ui.itemIcon_6.setPixmap(QPixmap(""))
-                    self.ui.champTier.setText("")
-                    self.ui.champScore.setText('整體分數:\n')
-                    self.ui.champWinRate.setText('英雄勝率:\n')
-                    self.ui.summonerSpells1.setPixmap(QPixmap(""))
-                    self.ui.summonerSpells2.setPixmap(QPixmap(""))
+                    #time.sleep(5)
+                    reset()
                 if gameflow == '"Lobby"':
-                    self.ui.state.setText("組隊房間")
-                    now_champ = get_champ_select()
-                    last_champ=now_champ
-                    self.ui.champIcon.setPixmap(QPixmap(""))
-                    self.ui.champName.setText("")
-                    self.ui.itemIcon_1.setPixmap(QPixmap(""))
-                    self.ui.itemIcon_2.setPixmap(QPixmap(""))
-                    self.ui.itemIcon_3.setPixmap(QPixmap(""))
-                    self.ui.itemIcon_4.setPixmap(QPixmap(""))
-                    self.ui.itemIcon_5.setPixmap(QPixmap(""))
-                    self.ui.itemIcon_6.setPixmap(QPixmap(""))
-                    self.ui.champTier.setText("")
-                    self.ui.champScore.setText('整體分數:\n')
-                    self.ui.champWinRate.setText('英雄勝率:\n')
-                    self.ui.summonerSpells1.setPixmap(QPixmap(""))
-                    self.ui.summonerSpells2.setPixmap(QPixmap(""))
+                    #time.sleep(5)
+                    reset()
                 if gameflow == '"Matchmaking"':
                     self.ui.state.setText("配對中")
                 if gameflow == '"InProgress"':
@@ -170,9 +311,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 if gameflow == '"ChampSelect"':
                     self.ui.state.setText("選擇英雄中")
                     now_champ = get_champ_select()
+                        
                     if(last_champ!=now_champ and now_champ!='None'):
-                        #print(now_champ)
-                        #print(now_champ_1)
+                        reset()
                         if(self.ui.checkBox_2.isChecked()):
                             if (self.ui.Metasrc.isChecked()):
                                 if (self.ui.radioButton.isChecked()):
@@ -196,69 +337,30 @@ class MainWindow(QtWidgets.QMainWindow):
                         champImg.loadFromData(data)
                         self.ui.champIcon.setPixmap(champImg)
                         
-       #                 itemIconUrl = "https://ddragon.leagueoflegends.com/cdn/11.15.1/img/item/3111.png"
-       #                 icondata = urllib.request.urlopen(itemIconUrl).read()
-       #                 itemIcon = QPixmap()
-       #                 itemIcon.loadFromData(icondata)
-       #                 self.ui.itemIcon_.setPixmap(itemIcon)
+                        threadList.append(threading.Thread(target = getTier))
+                        threadList[-1].setDaemon(True)
+                        threadList[-1].start()                     
                         
-                        if(self.ui.radioButton.isChecked()):
-                            response = requests.get('https://www.metasrc.com/aram/champion/'+str(now_champ))
-                        if(self.ui.radioButton_2.isChecked()):
-                            response = requests.get('https://www.metasrc.com/5v5/champion/'+str(now_champ))
-                            
-                        soup = BeautifulSoup(response.text, 'html.parser')
-                        itemdivs = soup.find('div', '_sfh2p9-3')     
-                        itemdivs = itemdivs.select('img')
-                        num = 1
-                        strlist = []
-                        tierList = ['God','Strong','Above Average','Below Average','Weak','Bad']
-                        colorList = ['green','lightgreen','lightyellow','deeppink','orange','red']
-                        tierText = ''
-                        lasticon = ''
-                        champTier = soup.find('div', '_xtoaop _4pvjjd')
-                        champTier = champTier.find_all('tr', '_eveje5')
-                        summonerSpell = soup.find('div', '_sfh2p9')
-                        summonerSpell = summonerSpell.select('img')
-                        for n in champTier :
-                            tierText = n.find("td", class_ = "_mi4tco").text
-                            if (num == 1):
-                                self.ui.champTier.setStyleSheet("QLabel{color:"+colorList[tierList.index(tierText)]+";}")
-                                self.ui.champTier.setText(tierText)
-                            if (num == 2):
-                                self.ui.champScore.setText('整體分數:\n'+tierText)
-                            if (num == 3):
-                                self.ui.champWinRate.setText('英雄勝率:\n'+tierText)
-                            num += 1
-                        num = 1
-                        for spell in summonerSpell :
-                            spellUrl = spell['data-src']
-                            data = urllib.request.urlopen(spellUrl).read()
-                            champImg = QPixmap()
-                            champImg.loadFromData(data)
-                            if ( num == 1):
-                                self.ui.summonerSpells1.setPixmap(champImg)
-                            if ( num == 2):
-                                self.ui.summonerSpells2.setPixmap(champImg)
-                            num += 1
-                        num = 1
-                        for icon in itemdivs:
-                            i = icon['data-src']
-                            strlist.append(str(i))
-                        for url in strlist:
-                            if url.rsplit("/",1)[1] == 'coin.png' and num <7:
-                                itemImg = getattr(self.ui, 'itemIcon_{}'.format(num))
-                                itemIconUrl = lasticon
-                                icondata = urllib.request.urlopen(itemIconUrl).read()
-                                itemIcon = QPixmap()
-                                itemIcon.loadFromData(icondata)
-                                itemImg.setPixmap(itemIcon)
-                                num += 1
-                                
-                            else:
-                                lasticon = url
+                        threadList.append(threading.Thread(target = getPerk))
+                        threadList[-1].setDaemon(True)
+                        threadList[-1].start()
+
+                        threadList.append(threading.Thread(target = getSpell))
+                        threadList[-1].setDaemon(True)
+                        threadList[-1].start()
+
+                        threadList.append(threading.Thread(target = getItem))
+                        threadList[-1].setDaemon(True)
+                        threadList[-1].start()
+                    
                         
-                            #tierList.extend(n.find("td", class_ = "_mi4tco"))
+                        '''
+                        getPerk()
+                        getTier()
+                        getSpell()
+                        getItem()
+                        '''
+
                         
                         
                         
