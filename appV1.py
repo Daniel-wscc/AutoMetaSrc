@@ -138,9 +138,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 
             soup = BeautifulSoup(response.text, 'html.parser')
             num = 1
-            tierList = ['God','Strong','Above Average','Below Average','Weak','Bad']
+            tierList = ['God / S+','Strong / S','Good / A','Fair / B','Weak / C','Bad / D']
             colorList = ['green','lightgreen','lightyellow','deeppink','orange','red']
-            champTier = soup.find('div', '_xtoaop _4pvjjd')
+            champTier = soup.find('table', '_cmfk9y _ukz2j4')
             champTier = champTier.find_all('tr', '_eveje5')
             for n in champTier :
                 tierText = n.find("td", class_ = "_mi4tco").text
@@ -214,21 +214,7 @@ class MainWindow(QtWidgets.QMainWindow):
             perkIcon = soup.find_all('image','lozad')
             color = ""
             for post in perkIcon:
-                if (num == 1 or num ==6):
-                    perkUrl = 'https://www.metasrc.com' + post['data-xlink-href']
-                    perk = post['data-xlink-href'].rsplit('/',1)[1]
-                    if(perk == '8000.png'):
-                        color = 'yellow'
-                    if(perk == '8100.png'):
-                        color = 'red'
-                    if(perk == '8200.png'):
-                        color = 'purple'
-                    if(perk == '8300.png'):
-                        color = 'blue'
-                    if(perk == '8400.png'):
-                        color = 'green'
-                else :
-                    perkUrl = post['data-xlink-href']
+                perkUrl = post['data-xlink-href']
                 headers = {'User-Agent':'Mozilla/5.0'}
                 req = urllib.request.Request(url=perkUrl, headers=headers)
                 perkIconData = urllib.request.urlopen(req).read()
@@ -247,7 +233,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if (num==12):
                     break
             
-            
+        '''    
         def changeColor(color , n):
             colorStyle = ['yellow','red','purple','blue','green']
             Style  = ["QLabel{background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(0, 0, 0, 255), stop:0.77 rgba(0, 0, 0, 255), stop:0.89"
@@ -272,7 +258,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if ( n == 6 ):
                 self.ui.colorBar_2.setStyleSheet(barStyle[colorStyle.index(color)])
             #perkBorder.setStyleSheet(yellowStyle)
-
+'''
                 
             
             
