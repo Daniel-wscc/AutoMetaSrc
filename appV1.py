@@ -140,18 +140,25 @@ class MainWindow(QtWidgets.QMainWindow):
             num = 1
             tierList = ['God / S+','Strong / S','Good / A','Fair / B','Weak / C','Bad / D']
             colorList = ['green','lightgreen','lightyellow','deeppink','orange','red']
-            champTier = soup.find('table', '_cmfk9y _ukz2j4')
-            champTier = champTier.find_all('tr', '_eveje5')
-            for n in champTier :
-                tierText = n.find("td", class_ = "_mi4tco").text
-                if (num == 1):
-                    self.ui.champTier.setStyleSheet("QLabel{color:"+colorList[tierList.index(tierText)]+";}")
-                    self.ui.champTier.setText(tierText)
-                if (num == 2):
-                    self.ui.champScore.setText('整體分數:\n'+tierText)
-                if (num == 3):
-                    self.ui.champWinRate.setText('英雄勝率:\n'+tierText)
-                num += 1
+            champTier = soup.find('div', '_eq293a')
+            tierTxt = ""
+            score = ""
+            winRate = ""
+            scoreTable = champTier.text
+           
+            for i in range(scoreTable.find('Tier:'),scoreTable.find('Win')):
+                tierTxt+=scoreTable[i]
+            tierTxt = tierTxt.split('\xa0')
+            self.ui.champTier.setStyleSheet("QLabel{color:"+colorList[tierList.index(tierTxt[1])]+";}")
+            self.ui.champTier.setText(tierTxt[1])
+            for i in range(scoreTable.find('Score'),scoreTable.find('Power')):
+                score+=scoreTable[i]
+            score=score.split(':')
+            self.ui.champScore.setText('整體分數:\n'+score[1])
+            for i in range(scoreTable.find('Win'),scoreTable.find('Pick')):
+                winRate+=scoreTable[i]
+            winRate = winRate.split(':')
+            self.ui.champWinRate.setText('英雄勝率:\n'+winRate[1])
         
         def getSpell():
             if(self.ui.radioButton.isChecked()):
@@ -183,7 +190,6 @@ class MainWindow(QtWidgets.QMainWindow):
             soup = BeautifulSoup(response.text, 'html.parser')
             itemdivs = soup.find('div', '_sfh2p9-3')     
             itemdivs = itemdivs.select('img')
-            perkImg = soup.find_all('image','lozad')
             num = 1
             strlist = []
             lasticon = ''
@@ -191,17 +197,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 i = icon['data-src']
                 strlist.append(str(i))
             for url in strlist:
-                if url.rsplit("/",1)[1] == 'coin.png' and num <7:
+                if num <7:
                     itemImg = getattr(self.ui, 'itemIcon_{}'.format(num))
-                    itemIconUrl = lasticon
-                    icondata = urllib.request.urlopen(itemIconUrl).read()
+                    #itemIconUrl = lasticon
+                    icondata = urllib.request.urlopen(url).read()
                     itemIcon = QPixmap()
                     itemIcon.loadFromData(icondata)
                     itemImg.setPixmap(itemIcon)
                     num += 1
-                    
-                else:
-                    lasticon = url
 
         def getPerk():
             if(self.ui.radioButton.isChecked()):
